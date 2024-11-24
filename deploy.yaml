@@ -1,0 +1,34 @@
+name: Deploy to AWS
+#Specifies the name of the workflow. This name will appear in the GitHub Actions interface.
+on:
+  push:
+    branches:
+      - main  # or any other branch you want to trigger the deployment
+#Defines the event that triggers the workflow. In this case, the workflow is triggered when there is a push to the main branch (or any branch you specify).
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{ ARN_ROLE }}
+        aws-region: eu-west-1  # or your preferred region
+
+    - name: Deploy CloudFormation stack
+      run: |
+        aws cloudformation deploy \
+          --template-file etl-template.yml \
+          --stack-name latte-legends-stack \
+          --parameter-overrides TeamName=latte-legends
+                           NetworkStackName= latte-legends-stack \
+                           EC2InstanceProfileRoleName= AWSReservedSSO_GenerationStudentAccess_58623e9d1db32773 \
+                           EC2InstanceKeyName= latte-legends-key \
+                           EC2InstanceSSHIngressIp1= 90.243.14.172/32 \
+                           EC2InstanceSSHIngressIp2= 104.28.40.85/32 \
+                           EC2InstanceSSHIngressIp3= 86.11.192.14/32 \
+                           EC2InstanceSSHIngressIp4= 2.123.1.139/32 \

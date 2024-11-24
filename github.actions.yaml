@@ -1,0 +1,57 @@
+Parameters:
+  GitHubOrg:
+    Description: "Name of GitHub organization/user (case sensitive)"
+    Type: String
+    Default: "generation-de-nat1"
+  RepositoryName:
+    Description: "Name of GitHub repository (case sensitive)"
+    Type: String
+    Default: "latte-legends"
+  OIDCProviderArn:
+    Description: "Arn for the GitHub OIDC Provider."
+    Default: "arn:aws:iam::339713081862:oidc-provider/token.actions.githubusercontent.com"
+    Type: String
+  OIDCAudience:
+    Description: "Audience supplied to configure-aws-credentials."
+    Default: "sts.amazonaws.com"
+    Type: String
+
+Conditions:
+  CreateOIDCProvider: !Equals 
+    - !Ref OIDCProviderArn
+    - ""
+
+Resources:
+  Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Action: sts:AssumeRoleWithWebIdentity
+            Principal:
+              Federated: !If 
+                - CreateOIDCProvider
+                - !Ref GithubOidc
+                - !Ref OIDCProviderArn
+            Condition:
+              StringEquals:
+                token.actions.githubusercontent.com:aud: !Ref OIDCAudience
+              StringLike:
+                token.actions.githubusercontent.com:sub: !Sub repo:${GitHubOrg}/${RepositoryName}:*
+
+  GithubOidc:
+    Type: AWS::IAM::OIDCProvider
+    Condition: CreateOIDCProvider
+    Properties:
+      Url: https://token.actions.githubusercontent.com
+      ClientIdList: 
+        - sts.amazonaws.com
+      ThumbprintList:
+        - ffffffffffffffffffffffffffffffffffffffff
+
+Outputs:
+  RoleArn: arn:aws:iam::339713081862:policy/ScopePermissions
+    Description: "The ARN of the IAM role to be assumed by GitHub Actions"
+    Value: !GetAtt Role.Arn

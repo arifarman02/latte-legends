@@ -1,0 +1,27 @@
+version: '3.1'
+
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: some-postgres_2
+      POSTGRES_PASSWORD: mysecretpassword
+    ports:
+      - "5433:5432" # Changed external port to 5433 to avoid conflicts
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      - latte-net
+
+  adminer:
+    image: adminer
+    ports:
+      - "8081:8080" # Changed external port to 8081 to avoid conflicts
+    networks:
+      - latte-net
+
+volumes:
+  db_data:
+
+networks:
+  latte-net:
